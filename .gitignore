@@ -31,4 +31,12 @@
 *.out
 *.app
 
+# CUDA Artifacts
+*.cubin
+*.fatbin
+*.ii
+*.ptx
+
+# Build Output
+build
 \.DS_Store
