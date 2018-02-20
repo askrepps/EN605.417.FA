@@ -22,8 +22,8 @@ void arrayMult(const float* in1, const float* in2, float* out, const unsigned in
 int main(int argc, char** argv)
 {
 	// read command line arguments
-	int totalThreads = 512;
-	int blockSize = 64;
+	int totalThreads = 64;
+	int blockSize = 16;
 	
 	if (argc >= 2) {
 		totalThreads = atoi(argv[1]);
