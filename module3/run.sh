@@ -1,4 +1,23 @@
-#!/usr/bin/sh
+#!/bin/sh
+
+runTest()
+{
+	numThreads=$1
+	blockSize=$2
+
+	echo "Running with $numThreads total threads and a block size of $blockSize threads each..."
+	build/arrayMult $numThreads $blockSize > results.txt
+	diff "expected_$numThreads.txt" results.txt
+	result=$?
+	rm results.txt
+	
+	if [ $result -eq 0 ]; then
+		echo 'Test passed!'
+	else
+		echo 'Test failed!' >&2
+		exit 1
+	fi
+}
 
 echo 'Creating build directory...'
 if [ ! -d build ]; then
@@ -16,17 +35,12 @@ if [ $? -ne 0 ]; then
         exit 1
 fi
 
-echo 'Running...'
-build/arrayMult > results.txt
-
-echo 'Checking results...'
-diff expected.txt results.txt
-result=$?
-rm results.txt
-
-if [ $result -eq 0 ]; then
-	echo 'Test passed!'
-else
-	echo 'Test failed!' >&2
-	exit 1
-fi
+runTest 64 64
+runTest 64 32
+runTest 64 16
+runTest 128 64
+runTest 128 32
+runTest 128 16
+runTest 256 64
+runTest 256 32
+runTest 256 16
