@@ -10,7 +10,7 @@ void saxpy(int n, float a, float *x, float *y)
 }
 
 int main(int argc, char** argv)
-{ 
+{
   int shift = 20;
   int iterations = 10;
   if (argc > 1) {
@@ -21,9 +21,11 @@ int main(int argc, char** argv)
   }
 
   int N = 1<<shift;
+  int bytes = N*sizeof(float);
   float *x, *y, *d_x, *d_y;
-  x = (float*)malloc(N*sizeof(float));
-  y = (float*)malloc(N*sizeof(float));
+
+  cudaMallocHost((void**)&x, bytes);
+  cudaMallocHost((void**)&y, bytes);
 
   cudaMalloc(&d_x, N*sizeof(float)); 
   cudaMalloc(&d_y, N*sizeof(float));
@@ -36,7 +38,6 @@ int main(int argc, char** argv)
   for (int i = 0; i < iterations; ++i) {
     cudaMemcpy(d_x, x, N*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_y, y, N*sizeof(float), cudaMemcpyHostToDevice);
-  
 
     // Perform SAXPY on 1M elements
     saxpy<<<(N+255)/256, 256>>>(N, 2.0f, d_x, d_y);
@@ -53,6 +54,6 @@ int main(int argc, char** argv)
 
   cudaFree(d_x);
   cudaFree(d_y);
-  free(x);
-  free(y);
+  cudaFreeHost(x);
+  cudaFreeHost(y);
 }
