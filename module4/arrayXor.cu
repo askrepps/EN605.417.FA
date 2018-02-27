@@ -200,16 +200,6 @@ int main(int argc, char** argv)
 	duration = singlePinnedStop - singlePinnedStart;
 	float singlePinnedMs = duration.count()*1000.0f;
 	printf("Pinned memory (1 iteration):      %.6f ms\n", singlePinnedMs);
-
-	if (singlePageableMs < singlePinnedMs) {
-		printf("Pageable wins\n\n");
-	}
-	else if (singlePageableMs > singlePinnedMs) {
-		printf("Pinned wins\n\n");
-	}
-	else {
-		printf("It's a tie\n\n");
-	}
 	
 	duration = multiPageableStop - multiPageableStart;
 	float multiPageableMs = duration.count()*1000.0f;
@@ -219,14 +209,23 @@ int main(int argc, char** argv)
 	float multiPinnedMs = duration.count()*1000.0f;
 	printf("Pinned memory (100 iterations):   %.6f ms\n", multiPinnedMs);
 	
-	if (multiPageableMs < multiPinnedMs) {
-		printf("Pageable wins\n\n");
+	if (singlePageableMs < singlePinnedMs) {
+		printf("1: Pageable wins");
 	}
-	else if (multiPageableMs > multiPinnedMs) {
-		printf("Pinned wins\n\n");
+	else if (singlePageableMs > singlePinnedMs) {
+		printf("1: Pinned wins");
 	}
 	else {
-		printf("It's a tie\n\n");
+		printf("1: It's a tie");
+	}
+	if (multiPageableMs < multiPinnedMs) {
+		printf(" | 100: Pageable wins\n\n");
+	}
+	else if (multiPageableMs > multiPinnedMs) {
+		printf(" | 100: Pinned wins\n\n");
+	}
+	else {
+		printf(" | 100: It's a tie\n\n");
 	}
 	
 	return EXIT_SUCCESS;
