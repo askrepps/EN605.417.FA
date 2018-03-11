@@ -90,7 +90,7 @@ __host__ void generate_rand_data(u32 * host_data_ptr)
 
 __host__ void gpu_kernel(void)
 {
-	const u32 num_elements = (128*1024);
+	const u32 num_elements = (1024*1024);
 	const u32 num_threads = 256;
 	const u32 num_blocks = (num_elements + (num_threads-1))/num_threads;
 	const u32 num_bytes = num_elements * sizeof(u32);
@@ -173,7 +173,7 @@ __host__ void gpu_kernel(void)
 		cudaDeviceReset();
 		printf("\n");
 	}
-	wait_exit();
+	//wait_exit();
 }
 
 __host__ __device__ unsigned int bitreverse(unsigned int number) {
@@ -229,8 +229,9 @@ void execute_gpu_functions()
  * Host function that prepares data array and passes it to the CUDA kernel.
  */
 int main(void) {
-	execute_host_functions();
-	execute_gpu_functions();
-
+	//execute_host_functions();
+	//execute_gpu_functions();
+	gpu_kernel();
+	
 	return 0;
 }
