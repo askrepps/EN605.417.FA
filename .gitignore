@@ -40,3 +40,7 @@
 # Build Output
 build
 \.DS_Store
+
+# Data Output
+common/data/Lena_*
+module9/data/Lena_*
