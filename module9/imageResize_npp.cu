@@ -90,8 +90,8 @@ int main(int argc, char** argv)
 {
 	// configure run
 	const std::string inputFile = "data/Lena.pgm";
-	float scaleFactorX = 0.5f;
-	float scaleFactorY = 0.5f;
+	float scaleFactorX = 1.0f;
+	float scaleFactorY = 1.0f;
 	NppiInterpolationMode interpMode = NPPI_INTER_NN;
 	
 	// user can provide no scale arguments for default 1/2 scaling,
