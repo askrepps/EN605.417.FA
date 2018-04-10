@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 	// dummy execution to avoid startup cost	
 	runFFT(timeSignal, freqSignalMagnitudes, dataSize, blockSize);
 	
-	// measure total exectution time (including frequency extraction from FFT results)
+	// measure total exectution time (including serial frequency extraction from FFT results on host)
 	auto start = std::chrono::high_resolution_clock::now();
 	
 	// run FFT and extract dominant frequency

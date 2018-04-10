@@ -1,9 +1,9 @@
-/////////////////////////
-// freqAnalyzer_old.cu // 
-// Andrew Krepps       //
-// Module 9 Assignment //
-// 4/9/2018            //
-/////////////////////////
+////////////////////////////
+// freqAnalyzer_thrust.cu // 
+// Andrew Krepps          //
+// Module 9 Assignment    //
+// 4/9/2018               //
+////////////////////////////
 
 #include <chrono>
 #include <math.h>
@@ -36,6 +36,8 @@ __global__ void calcMagnitudes(const cufftComplex* in, float* out, const unsigne
 /// \brief run an FFT on a real signal and extract the dominant frequency
 /// 
 /// \param [in] timeSignal the real time-domain signal
+/// \param [in] samplingRate the sampling rate (in Hz)
+/// \param [in] blockSize the number of threads per block
 ///////////////////////////////////////////////////////////////////////////////
 float analyzeFrequency(const thrust::host_vector<float>& timeSignal, const float samplingRate, const unsigned int blockSize)
 {
