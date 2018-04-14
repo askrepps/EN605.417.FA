@@ -20,7 +20,7 @@ fi
 
 echo 'Compiling...'
 CXXFLAGS='-std=c++11'
-if [ $OSTYPE == darwin* ]; then
+if [[ $OSTYPE == darwin* ]]; then
 	LINKFLAGS='-framework OpenCL'
 else
 	CXXFLAGS="$CXXFLAGS -I/usr/local/cuda/include -L/usr/local/cuda/lib64"
