@@ -19,7 +19,14 @@ if [ ! -d build ]; then
 fi
 
 echo 'Compiling...'
-g++ -std=c++11 -o build/HelloWorld HelloWorld.cpp -framework OpenCL
+CXXFLAGS='-std=c++11'
+if [ $OSTYPE == darwin* ]; then
+	LINKFLAGS='-framework OpenCL'
+else
+	CXXFLAGS="$CXXFLAGS -I/usr/local/cuda/include -L/usr/local/cuda/lib64"
+	LINKFLAGS='-lOpenCL'
+fi
+g++ $CXXFLAGS -o build/HelloWorld HelloWorld.cpp $LINKFLAGS
 if [ $? -ne 0 ]; then
         echo 'Compilation failed' >&2
         exit 1

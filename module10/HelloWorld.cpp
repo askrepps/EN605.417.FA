@@ -348,7 +348,7 @@ void validatePow(const float* a, const float* b, const float* result, size_t arr
 {
     for (size_t i = 0; i < arraySize; ++i)
     {
-        if (!almostEq(std::powf(a[i], b[i]), result[i]))
+        if (!almostEq(std::pow(a[i], b[i]), result[i]))
         {
             std::cerr << "Error: " << a[i] << " ^ " << b[i] << " != " << result[i] << std::endl;
         }
