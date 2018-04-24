@@ -54,6 +54,13 @@ inline void checkErr(cl_int err, const char * name)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Read the input signal from a CSV file
+/// 
+/// \param [in] fileName the path to the input signal CSV file
+/// 
+/// 
+///////////////////////////////////////////////////////////////////////////////
 bool readInputSignal(const std::string& fileName)
 {
     // open file
@@ -85,12 +92,18 @@ bool readInputSignal(const std::string& fileName)
     return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Run a kernel to completion
+/// 
+/// \param [in] commandQueue the command queue
+/// \param [in] kernel the kernel
+///////////////////////////////////////////////////////////////////////////////
 void runKernel(cl_command_queue queue, cl_kernel kernel)
 {
     const size_t globalWorkSize[2] = { OUTPUT_SIGNAL_HEIGHT, OUTPUT_SIGNAL_WIDTH };
     const size_t localWorkSize[2]  = { 1, 1 };
     
-    // wueue the kernel up for execution across the array
+    // queue the kernel up for execution across the array
     cl_int errNum = clEnqueueNDRangeKernel(
         queue, 
         kernel, 
@@ -107,6 +120,10 @@ void runKernel(cl_command_queue queue, cl_kernel kernel)
     clFinish(queue);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Set up OpenCL and the kernel, compile the kernel, and time its
+/// execution
+///////////////////////////////////////////////////////////////////////////////
 void runTest()
 {
     cl_int errNum;
@@ -298,9 +315,6 @@ void runTest()
     checkErr(errNum, "clEnqueueReadBuffer");
 }
 
-///
-//  main() for Convoloution example
-//
 int main(int argc, char** argv)
 {
     // configure run
@@ -309,8 +323,14 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     
-    readInputSignal(argv[1]);
-    runTest();
+    // read input signal and run test
+    if (readInputSignal(argv[1])) {
+        runTest();
+    }
+    else {
+        std::cerr << "Input signal CSV file could not be read!" << std::endl;
+        return EXIT_FAILURE;
+    }
     
     return EXIT_SUCCESS;
 }
