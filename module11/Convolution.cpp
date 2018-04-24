@@ -5,6 +5,8 @@
 // 23 April 2018        //
 //////////////////////////
 
+#include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -19,39 +21,32 @@
 // Constants
 
 // input signal (defined in row-major order)
-const unsigned int INPUT_SIGNAL_HEIGHT = 8;
-const unsigned int INPUT_SIGNAL_WIDTH  = 8;
-cl_float inputSignal[INPUT_SIGNAL_HEIGHT][INPUT_SIGNAL_WIDTH] =
-{
-    {3.0f, 1.0f, 1.0f, 4.0f, 8.0f, 2.0f, 1.0f, 3.0f},
-    {4.0f, 2.0f, 1.0f, 1.0f, 2.0f, 1.0f, 2.0f, 3.0f},
-    {4.0f, 4.0f, 4.0f, 4.0f, 3.0f, 2.0f, 2.0f, 2.0f},
-    {9.0f, 8.0f, 3.0f, 8.0f, 9.0f, 0.0f, 0.0f, 0.0f},
-    {9.0f, 3.0f, 3.0f, 9.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-    {0.0f, 9.0f, 0.0f, 8.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-    {3.0f, 0.0f, 8.0f, 8.0f, 9.0f, 4.0f, 4.0f, 4.0f},
-    {5.0f, 9.0f, 8.0f, 1.0f, 8.0f, 1.0f, 1.0f, 1.0f}
-};
+const unsigned int INPUT_SIGNAL_HEIGHT = 49;
+const unsigned int INPUT_SIGNAL_WIDTH  = 49;
+cl_float inputSignal[INPUT_SIGNAL_HEIGHT][INPUT_SIGNAL_WIDTH];
 
 // output signal (defined in row-major order)
-const unsigned int OUTPUT_SIGNAL_HEIGHT = 6;
-const unsigned int OUTPUT_SIGNAL_WIDTH  = 6;
+const unsigned int OUTPUT_SIGNAL_HEIGHT = 43;
+const unsigned int OUTPUT_SIGNAL_WIDTH  = 43;
 cl_float outputSignal[OUTPUT_SIGNAL_HEIGHT][OUTPUT_SIGNAL_WIDTH];
 
 // convolution mask (defined in row-major order)
-const unsigned int MASK_HEIGHT = 3;
-const unsigned int MASK_WIDTH  = 3;
+const unsigned int MASK_HEIGHT = 7;
+const unsigned int MASK_WIDTH  = 7;
 cl_float mask[MASK_HEIGHT][MASK_WIDTH] =
 {
-    {1.0f, 1.0f, 1.0f},
-    {1.0f, 0.0f, 1.0f},
-    {1.0f, 1.0f, 1.0f}
+    {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f},
+    {0.25f, 0.50f, 0.50f, 0.50f, 0.50f, 0.50f, 0.25f},
+    {0.25f, 0.50f, 0.75f, 0.75f, 0.75f, 0.50f, 0.25f},
+    {0.25f, 0.50f, 0.75f, 1.00f, 0.75f, 0.50f, 0.25f},
+    {0.25f, 0.50f, 0.75f, 0.75f, 0.75f, 0.50f, 0.25f},
+    {0.25f, 0.50f, 0.50f, 0.50f, 0.50f, 0.50f, 0.25f},
+    {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f}
 };
 
 ///
 // Function to check and handle OpenCL errors
-inline void 
-checkErr(cl_int err, const char * name)
+inline void checkErr(cl_int err, const char * name)
 {
     if (err != CL_SUCCESS) {
         std::cerr << "ERROR: " <<  name << " (" << err << ")" << std::endl;
@@ -59,10 +54,60 @@ checkErr(cl_int err, const char * name)
     }
 }
 
-///
-//  main() for Convoloution example
-//
-int main(int argc, char** argv)
+bool readInputSignal(const std::string& fileName)
+{
+    // open file
+    std::ifstream fileStream(fileName);
+    if (!fileStream.is_open()) {
+        std::cerr << "Could not open input signal CSV file: '" << fileName << "'" << std::endl;
+        return false;
+    }
+    
+    // read each data row
+    std::string line;
+    unsigned int rowNumber = 0;
+    while (rowNumber < INPUT_SIGNAL_HEIGHT && std::getline(fileStream, line)) {
+        // parse each data row into tokens
+        std::istringstream lineStream(line);
+        std::string token;
+        unsigned int colNumber = 0;
+        while (colNumber < INPUT_SIGNAL_WIDTH && std::getline(lineStream, token, ',')) {
+            inputSignal[rowNumber][colNumber] = std::stof(token);
+            ++colNumber;
+        }
+    
+        ++rowNumber;
+    }
+    
+    // close file
+    fileStream.close();
+    
+    return true;
+}
+
+void runKernel(cl_command_queue queue, cl_kernel kernel)
+{
+    const size_t globalWorkSize[2] = { OUTPUT_SIGNAL_HEIGHT, OUTPUT_SIGNAL_WIDTH };
+    const size_t localWorkSize[2]  = { 1, 1 };
+    
+    // wueue the kernel up for execution across the array
+    cl_int errNum = clEnqueueNDRangeKernel(
+        queue, 
+        kernel, 
+        2, 
+        NULL,
+        globalWorkSize, 
+        localWorkSize,
+        0, 
+        NULL, 
+        NULL);
+    checkErr(errNum, "clEnqueueNDRangeKernel");
+    
+    // wait for the kernel to finish
+    clFinish(queue);
+}
+
+void runTest()
 {
     cl_int errNum;
     cl_uint numPlatforms;
@@ -228,22 +273,18 @@ int main(int argc, char** argv)
     errNum |= clSetKernelArg(kernel, 4, sizeof(cl_uint), &MASK_WIDTH);
     checkErr(errNum, "clSetKernelArg");
     
-    const size_t globalWorkSize[2] = { OUTPUT_SIGNAL_HEIGHT, OUTPUT_SIGNAL_WIDTH };
-    const size_t localWorkSize[2]  = { 1, 1 };
+    // dummy execution to avoid startup performance hit
+    runKernel(queue, kernel);
     
-    // Queue the kernel up for execution across the array
-    errNum = clEnqueueNDRangeKernel(
-        queue, 
-        kernel, 
-        2, 
-        NULL,
-        globalWorkSize, 
-        localWorkSize,
-        0, 
-        NULL, 
-        NULL);
-    checkErr(errNum, "clEnqueueNDRangeKernel");
+    // time kernel execution
+    auto start = std::chrono::high_resolution_clock::now();
+    runKernel(queue, kernel);
+    auto stop = std::chrono::high_resolution_clock::now();
     
+    float ms = std::chrono::duration<float>(stop - start).count()*1000.0f;
+    std::cerr << "Execution time: " << ms << " ms" << std::endl;
+    
+    // copy results to host memory
     errNum = clEnqueueReadBuffer(
         queue, 
         outputSignalBuffer, 
@@ -255,18 +296,21 @@ int main(int argc, char** argv)
         NULL, 
         NULL);
     checkErr(errNum, "clEnqueueReadBuffer");
-    
-    // Output the result buffer
-    for (int y = 0; y < OUTPUT_SIGNAL_HEIGHT; y++)
-    {
-        for (int x = 0; x < OUTPUT_SIGNAL_WIDTH; x++)
-        {
-            std::cout << outputSignal[y][x] << " ";
-        }
-        std::cout << std::endl;
+}
+
+///
+//  main() for Convoloution example
+//
+int main(int argc, char** argv)
+{
+    // configure run
+    if (argc < 1) {
+        std::cerr << "Input signal CSV must be provided!" << std::endl;
+        return EXIT_FAILURE;
     }
     
-    std::cout << std::endl << "Executed program succesfully." << std::endl;
+    readInputSignal(argv[1]);
+    runTest();
     
-    return 0;
+    return EXIT_SUCCESS;
 }
