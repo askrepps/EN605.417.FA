@@ -10,7 +10,7 @@
 __kernel void addFive(
 	const __global float* inputBuffer,
 	__global float* outputBuffer,
-	size_t n)
+	const unsigned int n)
 {
 	size_t id = get_global_id(0);
 	
@@ -23,7 +23,7 @@ __kernel void addFive(
 __kernel void multiplyByTwo(
 	const __global float* inputBuffer,
 	__global float* outputBuffer,
-	size_t n)
+	const unsigned int n)
 {
 	size_t id = get_global_id(0);
 	
@@ -36,7 +36,7 @@ __kernel void multiplyByTwo(
 __kernel void subtractSeven(
 	const __global float* inputBuffer,
 	__global float* outputBuffer,
-	size_t n)
+	const unsigned int n)
 {
 	size_t id = get_global_id(0);
 	
