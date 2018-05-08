@@ -12,6 +12,7 @@
 #endif
 
 #include <chrono>
+#include <istream>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -311,6 +312,53 @@ void queueAllPipelineCommands(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/// \brief Read input data from an input stream
+/// 
+/// \param [in] is the input stream
+/// \param [out] inputData the host input data
+/// \param [in] inputSize the host input data size
+///////////////////////////////////////////////////////////////////////////////
+void getInput(std::istream& is, float* inputData, size_t inputSize)
+{
+    unsigned int index = 0;
+    while (index < inputSize && is >> inputData[index])
+    {
+        ++index;
+    }
+    
+    if (index < inputSize)
+    {
+        std::cerr << "Warning: insufficent input data read to fill " << inputSize << " array elements" << std::endl;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Read input data from stdin
+/// 
+/// \param [out] inputData the host input data
+/// \param [in] inputSize the host input data size
+///////////////////////////////////////////////////////////////////////////////
+void getKeyboardInput(float* inputData, size_t inputSize)
+{
+    std::cout << "Enter " << inputSize << " numbers:" << std::endl;
+    getInput(std::cin, inputData, inputSize);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Read input data from a file
+/// 
+/// \param [in] inputFile the path to the input file
+/// \param [out] inputData the host input data
+/// \param [in] inputSize the host input data size
+///////////////////////////////////////////////////////////////////////////////
+void getFileInput(const std::string& inputFile, float* inputData, size_t inputSize)
+{
+    std::cout << "Reading from input file '" << inputFile << "'" << std::endl;
+    std::ifstream fileStream(inputFile);
+    getInput(fileStream, inputData, inputSize);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /// \brief Copy output data back to the host
 /// 
 /// \param [in] queue the command queue
@@ -336,9 +384,21 @@ void getOutputData(cl_command_queue queue, cl_mem buffer, float* outputData, siz
 int main(int argc, char** argv)
 {
     // configure run
-    const size_t inputSize = 5;
-    float inputData[5];
-    float outputData[5];
+    unsigned int dataSize = 5;
+    std::string inputFile = "";
+    
+    if (argc > 1)
+    {
+        dataSize = atoi(argv[1]);
+    }
+    if (argc > 2)
+    {
+        inputFile = argv[2];
+    }
+    
+    // allocate host memory
+    float* inputData = new float[dataSize];
+    float* outputData = new float[dataSize];
     
     // initialize components of OpenCL pipeline
     cl_int errNum;
@@ -353,21 +413,24 @@ int main(int argc, char** argv)
     
     initDeviceAndContext(&deviceID, &context);
     initProgram("pipeline.cl", context, deviceID, &program);
-    initBuffers(context, inputSize, buffers);
-    initKernels(program, buffers, inputSize, kernels);
+    initBuffers(context, dataSize, buffers);
+    initKernels(program, buffers, dataSize, kernels);
     initQueues(context, deviceID, queues);
     
     // set up command pipeline (execution will wait for input event to be triggered)
     inputEvent = clCreateUserEvent(context, &errNum);
     checkErr(errNum, "clCreateUserEvent");
-    queueAllPipelineCommands(inputEvent, inputData, 5, queues, buffers[0], kernels, outputEvent);
+    queueAllPipelineCommands(inputEvent, inputData, dataSize, queues, buffers[0], kernels, outputEvent);
     
-    // retrieve input
-    inputData[0] = 1.0f;
-    inputData[1] = 2.0f;
-    inputData[2] = 3.0f;
-    inputData[3] = 4.0f;
-    inputData[4] = 5.0f;
+    // retrieve input from selected source
+    if (inputFile != "")
+    {
+        getFileInput(inputFile, inputData, dataSize);
+    }
+    else
+    {
+        getKeyboardInput(inputData, dataSize);
+    }
     
     // time execution (input event will trigger pipeline execution)
     auto start = std::chrono::high_resolution_clock::now();
@@ -382,16 +445,16 @@ int main(int argc, char** argv)
     std::cout << "Execution time: " << ms << " ms" << std::endl;
     
     // display output data
-    getOutputData(queues[0], buffers[NUM_STAGES], outputData, 5);
+    getOutputData(queues[0], buffers[NUM_STAGES], outputData, dataSize);
     std::cout << "Output:" << std::endl;
-    for (unsigned int i = 0; i < 5; ++i)
+    for (unsigned int i = 0; i < dataSize; ++i)
     {
         std::cout << outputData[i] << " ";
     }
     std::cout << std::endl;
     
-    //delete [] inputData;
-    //delete [] outputData;
+    delete [] inputData;
+    delete [] outputData;
     
     return EXIT_SUCCESS;
 }

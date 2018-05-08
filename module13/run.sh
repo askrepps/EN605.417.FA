@@ -1,9 +1,19 @@
 #!/bin/sh
 
-runTest()
+runTests()
 {
-    build/pipeline
-    echo ""
+    echo 'Running tests...'
+    echo ''
+    echo '1 2 3 4 5' | build/pipeline
+    echo ''
+    echo '1 2 3 4 5 6 7 8' | build/pipeline 8
+    echo ''
+    build/pipeline 16 data/test16.txt
+    echo ''
+    build/pipeline 32 data/test32.txt
+    echo ''
+    build/pipeline 64 data/test64.txt
+    echo ''
 }
 
 echo 'Creating build directory...'
@@ -28,7 +38,5 @@ if [ $? -ne 0 ]; then
         echo 'Compilation failed' >&2
         exit 1
 fi
-echo ''
 
-echo 'Running tests...'
-runTest
+runTests
